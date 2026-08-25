@@ -1,0 +1,16 @@
+{
+  "name": "webflclash",
+  "version": "1.0.0",
+  "description": "WebFlClash - Web-based proxy client inspired by FlClash",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node check.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.16.0",
+    "yaml": "^2.3.4"
+  }
+}
