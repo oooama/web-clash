@@ -1,0 +1,36 @@
+/* Design tokens
+ * Colour, radius, shadow and layout variables for light and dark themes.
+ * Split out of the original single <style> block. Ranges are contiguous in
+ * the original order and the files are linked in that same order, so the
+ * cascade is unchanged.
+ */
+
+        :root{
+            --bg:#d5d5db;
+            --glass:rgba(255,255,255,.52);--glass-b:rgba(255,255,255,.6);--glass-h:rgba(255,255,255,.85);
+            --glass2:rgba(255,255,255,.4);--glass3:rgba(255,255,255,.65);
+            --side:rgba(210,210,218,.72);
+            --t:#1c1c1e;--t2:#636366;--t3:#aeaeb2;
+            --bd:rgba(0,0,0,.08);--bd2:rgba(0,0,0,.04);
+            --ac:#007aff;--ac2:#5ac8fa;
+            --gn:#34c759;--rd:#ff3b30;--or:#ff9500;--yl:#ffcc00;
+            --r:20px;--rx:14px;
+            --sh:0 4px 30px rgba(0,0,0,.08);
+            --shm:0 8px 40px rgba(0,0,0,.12);
+            --shg:0 20px 60px rgba(0,0,0,.15);
+            --sw:220px;
+            --glow:0 0 30px rgba(0,122,255,.1)
+        }
+        [data-theme="dark"]{
+            --bg:#000000;
+            --glass:rgba(255,255,255,.06);--glass-b:rgba(255,255,255,.12);--glass-h:rgba(255,255,255,.1);
+            --glass2:rgba(255,255,255,.05);--glass3:rgba(255,255,255,.08);
+            --side:rgba(255,255,255,.05);
+            --t:#f5f5f7;--t2:#98989d;--t3:#636366;
+            --bd:rgba(255,255,255,.08);--bd2:rgba(255,255,255,.04);
+            --ac:#0a84ff;--ac2:#64d2ff;
+            --sh:0 4px 20px rgba(0,0,0,.3);
+            --shm:0 8px 32px rgba(0,0,0,.4);
+            --shg:0 20px 60px rgba(0,0,0,.5);
+            --glow:0 0 20px rgba(10,132,255,.2)
+        }

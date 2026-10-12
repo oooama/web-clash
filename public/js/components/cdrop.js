@@ -1,0 +1,6 @@
+// Custom <div class="cdrop"> dropdown: value get/set plus one-time wiring.
+export function cdropGet(id){const el=document.getElementById(id);return el?el.dataset.val:'';}
+
+export function cdropSet(id,v){const el=document.getElementById(id);if(!el)return;el.dataset.val=v;const h=el.querySelector('input[type=hidden]');if(h)h.value=v;el.querySelector('.cdrop-trigger span:first-child').textContent=v;el.querySelectorAll('.cdrop-opt').forEach(o=>{o.classList.toggle('sel',o.dataset.val===String(v));});}
+
+export function initCdrops(){document.querySelectorAll('.cdrop').forEach(el=>{const trigger=el.querySelector('.cdrop-trigger');trigger.addEventListener('click',e=>{e.stopPropagation();const wasOpen=el.classList.contains('open');document.querySelectorAll('.cdrop.open').forEach(d=>d.classList.remove('open'));if(!wasOpen)el.classList.add('open');});el.querySelectorAll('.cdrop-opt').forEach(opt=>{opt.addEventListener('click',e=>{e.stopPropagation();const v=opt.dataset.val;el.dataset.val=v;const h=el.querySelector('input[type=hidden]');if(h)h.value=v;trigger.querySelector('span:first-child').textContent=v;el.querySelectorAll('.cdrop-opt').forEach(o=>o.classList.remove('sel'));opt.classList.add('sel');el.classList.remove('open');});});});}

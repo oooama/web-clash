@@ -1,0 +1,21 @@
+/* Base
+ * Reset, page background and the ambient gradient wash.
+ * Split out of the original single <style> block. Ranges are contiguous in
+ * the original order and the files are linked in that same order, so the
+ * cascade is unchanged.
+ */
+
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:-apple-system,'SF Pro Display','SF Pro Text','Helvetica Neue',sans-serif;background:var(--bg);color:var(--t);overflow:hidden;height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+        body::before{content:'';position:fixed;inset:0;width:100%;height:100%;background:
+            radial-gradient(circle 500px at 15% 20%,rgba(0,122,255,.06),transparent),
+            radial-gradient(circle 400px at 80% 15%,rgba(100,210,255,.05),transparent),
+            radial-gradient(circle 350px at 50% 80%,rgba(175,82,222,.04),transparent);
+            z-index:-1;pointer-events:none}
+        [data-theme="dark"]{color-scheme:dark}
+        [data-theme="dark"] body::before{background:
+            radial-gradient(circle 400px at 15% 25%,rgba(10,132,255,.55),transparent),
+            radial-gradient(circle 350px at 75% 15%,rgba(100,210,255,.4),transparent),
+            radial-gradient(circle 300px at 55% 75%,rgba(191,90,242,.35),transparent),
+            radial-gradient(circle 250px at 85% 70%,rgba(48,209,88,.3),transparent),
+            radial-gradient(circle 200px at 25% 80%,rgba(255,159,10,.25),transparent)}
