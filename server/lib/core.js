@@ -100,6 +100,12 @@ async function start() {
         stdio: 'ignore',
         windowsHide: true
     });
+    // Without an 'error' listener a spawn failure (EACCES, corrupted binary)
+    // escalates to uncaughtException and kills the whole console via the
+    // global handler in server.js.
+    child.on('error', (err) => {
+        console.error('[core] spawn failed:', err.message);
+    });
     child.unref();
     await writePid(child.pid);
     invalidateSample();

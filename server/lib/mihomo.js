@@ -71,7 +71,7 @@ function connectLogStream() {
         logStream = null;
     }
 
-    logStream = http.get(`http://127.0.0.1:${CLASH_API_PORT}/logs`, (res) => {
+    const stream = http.get(`http://127.0.0.1:${CLASH_API_PORT}/logs`, (res) => {
         logRetryDelay = 1000;
         let lineBuf = '';
         res.on('data', (chunk) => {
@@ -93,6 +93,9 @@ function connectLogStream() {
     });
 
     const scheduleReconnect = () => {
+        // Stale error/close events from a destroyed previous stream must not
+        // clobber the current one or schedule a duplicate reconnect.
+        if (logStream !== stream) return;
         logStream = null;
         if (!logReconnectEnabled) return;
         if (logRetryTimer) return;
@@ -104,8 +107,9 @@ function connectLogStream() {
         }, logRetryDelay);
     };
 
-    logStream.on('error', scheduleReconnect);
-    logStream.on('close', scheduleReconnect);
+    stream.on('error', scheduleReconnect);
+    stream.on('close', scheduleReconnect);
+    logStream = stream;
 }
 
 /** True when a log stream is currently attached. */

@@ -25,9 +25,11 @@ const profilesRouter = require('./routes/profiles');
 async function proxyToCore(req, res) {
     try {
         const headers = { ...req.headers, host: `127.0.0.1:${CLASH_API_PORT}` };
+        // fetch computes both itself; a stale content-length or a chunked
+        // transfer-encoding makes undici reject the request outright.
         delete headers['content-length'];
+        delete headers['transfer-encoding'];
         delete headers[REQUEST_HEADER];
-
         const options = { method: req.method, headers, signal: AbortSignal.timeout(3000) };
         if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && req.body && Object.keys(req.body).length) {
             options.body = JSON.stringify(req.body);

@@ -1,11 +1,31 @@
 @echo off
 cd /d "%~dp0"
 
-taskkill /F /IM mihomo-run.exe >nul 2>&1
+rem Prefer the PID recorded by the console (server/lib/core.js): kill only
+rem that process, never every mihomo-run.exe on the machine.
+set COREPID=
+if exist "data\core.pid" set /p COREPID=<data\core.pid
 
+if not "%COREPID%"=="" goto :killpid
+
+rem No PID file: fall back to whatever listens on the core ports
+rem (7890 mixed / 9090 controller), still not every mihomo-run.exe.
+for %%p in (7890 9090) do (
+    for /f "tokens=5" %%a in ('netstat -ano ^| findstr /C:":%%p " ^| findstr LISTENING') do (
+        taskkill /F /PID %%a >nul 2>&1
+    )
+)
+goto :killweb
+
+:killpid
+tasklist /FI "PID eq %COREPID%" 2>nul | find /I "mihomo-run.exe" >nul
+if not errorlevel 1 taskkill /F /PID %COREPID% >nul 2>&1
+del /q "data\core.pid" >nul 2>&1
+
+:killweb
 rem Only kill the process listening on the web console port (7891),
 rem instead of killing every node.exe on the system.
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":7891" ^| findstr LISTENING') do (
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr /C:":7891 " ^| findstr LISTENING') do (
     taskkill /F /PID %%a >nul 2>&1
 )
 

@@ -11,6 +11,9 @@ async function fetchAndConvertSub(url) {
         signal: AbortSignal.timeout(15000),
         redirect: 'follow'
     });
+    if (!resp.ok) {
+        return { error: `订阅请求失败 (HTTP ${resp.status})，请检查链接是否正确或稍后重试` };
+    }
     const subInfo = parseSubscriptionInfo(resp.headers);
     const text = await resp.text();
     if (/<html|<!DOCTYPE/i.test(text)) {

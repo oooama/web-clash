@@ -532,26 +532,35 @@ function checkInvariants() {
     if (!/sanitizeProfileName/.test(profilesSrc)) fail('server/routes/profiles.js does not sanitise profile names');
     else pass('profile routes sanitise names');
 
-    // Front-end: page modules must escape interpolated values.
-    const pageFiles = walk(path.join(ROOT, 'public', 'js', 'pages'), (f) => f.endsWith('.js'));
-    if (pageFiles.length) {
+    // Front-end: modules must escape interpolated values that reach HTML
+    // sinks. Scans the whole public/js tree (pages AND components) and covers
+    // innerHTML/outerHTML template-literal assignments plus insertAdjacentHTML
+    // calls, not just the pages/ innerHTML pattern.
+    const feFiles = walk(path.join(ROOT, 'public', 'js'), (f) => f.endsWith('.js'));
+    if (feFiles.length) {
         const raw = [];
-        for (const file of pageFiles) {
+        const sinkPatterns = [
+            /(?:innerHTML|outerHTML)\s*=\s*`([\s\S]*?)`/g,
+            /insertAdjacentHTML\s*\(\s*[^,)]+,\s*`([\s\S]*?)`\s*\)/g
+        ];
+        for (const file of feFiles) {
             const src = fs.readFileSync(file, 'utf8');
-            for (const match of src.matchAll(/innerHTML\s*=\s*`([\s\S]*?)`/g)) {
-                const template = match[1];
-                for (const expr of template.matchAll(/\$\{([^}]+)\}/g)) {
-                    const code = expr[1];
-                    if (!/\besc\(|\bescapeHtml\(|\battr\(|\bh\(/.test(code)) {
-                        raw.push(`${rel(file)}: ${code.trim().slice(0, 60)}`);
+            for (const pattern of sinkPatterns) {
+                for (const match of src.matchAll(pattern)) {
+                    const template = match[1];
+                    for (const expr of template.matchAll(/\$\{([^}]+)\}/g)) {
+                        const code = expr[1];
+                        if (!/\besc\(|\bescapeHtml\(|\battr\(|\bh\(/.test(code)) {
+                            raw.push(`${rel(file)}: ${code.trim().slice(0, 60)}`);
+                        }
                     }
                 }
             }
         }
-        if (raw.length) fail(`unescaped interpolation into innerHTML: ${raw.join(' | ')}`);
-        else pass('no unescaped interpolation into innerHTML in page modules');
+        if (raw.length) fail(`unescaped interpolation into HTML sinks: ${raw.join(' | ')}`);
+        else pass('no unescaped interpolation into HTML sinks in front-end modules');
     } else {
-        notes.push('public/js/pages/ not present yet - XSS interpolation check skipped');
+        notes.push('public/js/ not present yet - XSS interpolation check skipped');
     }
 
     // i18n dictionaries must stay in sync.
