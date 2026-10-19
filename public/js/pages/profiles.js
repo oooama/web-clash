@@ -40,11 +40,30 @@ export async function loadPf(){
                 }
                 const metaHtml=`<div class="pf-meta"><span>${fmtSz(p.size)}</span><span>${esc(new Date(p.modified).toLocaleDateString())}</span>${nodeCount?`<span>${nodeCount} ${T('pf.nodesLower')}</span>`:''}${intervalLabel?`<span style="color:var(--gn)">⏰ ${esc(intervalLabel)}</span>`:''}</div>`;
                 const isActive=p.name===state.activePf;
-                return `<div class="pf-card${isActive?' active':''}"><div class="pf-top"><div class="pf-info"><div class="pf-name">${safeDisplay}${isActive?'<span class="tag" style="background:var(--gn)">ACTIVE</span>':hasUrl?'<span class="tag">SUB</span>':''}</div>${urlHtml}${metaHtml}${subInfoHtml}</div></div><div class="pf-btns"><button class="btn bp bs" data-action="apply" data-name="${safeName}"><span class="material-icons-round">play_arrow</span><span>${T('pf.apply')}</span></button><button class="btn bo bs" data-action="update" data-name="${safeName}"><span class="material-icons-round">refresh</span><span>${T('pf.upd')}</span></button><button class="btn bo bs" data-action="edit" data-name="${safeName}"><span class="material-icons-round">edit</span><span>${T('pf.editB')}</span></button><button class="btn bd bs" data-action="delete" data-name="${safeName}"><span class="material-icons-round">delete</span><span>${T('pf.del')}</span></button></div></div>`;
+                return `<div class="pf-card${isActive?' active':''}"><div class="pf-top"><div class="pf-info"><div class="pf-name">${safeDisplay}${isActive?'<span class="tag" style="background:var(--gn)">ACTIVE</span>':p.aggregate?'<span class="tag" style="background:var(--ac)">FREE</span>':hasUrl?'<span class="tag">SUB</span>':''}</div>${urlHtml}${metaHtml}${subInfoHtml}</div></div><div class="pf-btns"><button class="btn bp bs" data-action="apply" data-name="${safeName}"><span class="material-icons-round">play_arrow</span><span>${T('pf.apply')}</span></button><button class="btn bo bs" data-action="update" data-name="${safeName}"><span class="material-icons-round">refresh</span><span>${T('pf.upd')}</span></button><button class="btn bo bs" data-action="edit" data-name="${safeName}"><span class="material-icons-round">edit</span><span>${T('pf.editB')}</span></button><button class="btn bd bs" data-action="delete" data-name="${safeName}"><span class="material-icons-round">delete</span><span>${T('pf.del')}</span></button></div></div>`;
             }).join('');
         }
 
 export async function saveProf(){const n=document.getElementById('pName').value.trim(),u=document.getElementById('pUrl').value.trim(),c=document.getElementById('pYaml').value.trim();if(!n&&!u){toast(T('t.nameReq'));return;}if(!u&&!c){toast(T('t.contentReq'));return;}const r=await api('/profiles',{method:'POST',body:{name:n,content:c,url:u||undefined}});if(!r||!r.success){toast(T('t.addFail')+': '+(r?.error||T('t.noServer')));return;}closeDlg();document.getElementById('pName').value='';document.getElementById('pUrl').value='';document.getElementById('pYaml').value='';loadPf();toast(T('t.saved'));}
+
+export async function refreshFree(){
+    const r=await api('/free-sources/refresh',{method:'POST'});
+    if(!r)return toast(T('t.noServer'));
+    if(r.busy)return toast(T('t.freeBusy'));
+    if(!r.started)return toast(T('t.freeFail')+': '+(r.error||''));
+    toast(T('t.freeRunning'));
+    const startedAt=Date.now();
+    const iv=setInterval(async()=>{
+        const s=await api('/free-sources');
+        if(!s)return;
+        if(s.running){if(Date.now()-startedAt>180000){clearInterval(iv);toast(T('t.freeFail'));}return;}
+        clearInterval(iv);
+        loadPf();
+        const lr=s.lastRun;
+        if(lr&&lr.ok)toast(`${T('t.freeDone')}: ${lr.alive||0}/${lr.total||0} ${T('pf.nodesLower')}`);
+        else toast(T('t.freeFail')+': '+((lr&&lr.error)||''));
+    },3000);
+}
 
 export async function applyPf(n){const r=await api('/profiles/'+encodeURIComponent(n)+'/apply',{method:'POST'});if(!r)return toast(T('t.noServer'));if(!r.success)return toast(T('t.applyFail')+': '+(r.error||T('t.unknown')));state.activePf=n;localStorage.setItem('activePf',n);loadPf();refreshStatus();toast(T('t.updating'));setTimeout(()=>{navigate('/proxies');let t=0;const iv=setInterval(()=>{loadPx();t++;if(t>20||document.querySelector('.nc')){clearInterval(iv);toast(T('t.applied'));}},1000);},1500);}
 
@@ -68,6 +87,7 @@ export function mount(root) {
             else if (action === 'edit') editPf(name);
             else if (action === 'delete') delPf(name);
             else if (action === 'add-profile') showDlg();
+            else if (action === 'add-free') refreshFree();
             else if (action === 'save-profile') saveProf();
         }),
         // The dialogs live outside the page container, so their buttons are

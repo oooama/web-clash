@@ -7,7 +7,7 @@ const { loadMeta, updateMeta, applySubscriptionInfo } = require('../lib/meta');
 const { writeFileAtomic } = require('../lib/atomic');
 const { fetchAndConvertSub } = require('../lib/subscription');
 const { hasSubscriptionInfo } = require('../lib/subscription-info');
-
+const { refreshFreeAggregate } = require('../lib/free-sources');
 const INTERVAL_MS = 60000;
 
 /** Refresh every profile whose interval has elapsed. */
@@ -16,12 +16,21 @@ async function autoUpdateSubs() {
         const metaSnapshot = await loadMeta();
         const now = Date.now();
         for (const [fileName, info] of Object.entries(metaSnapshot)) {
-            if (!info || !info.url || !info.interval || info.interval <= 0) continue;
+            if (!info || !info.interval || info.interval <= 0) continue;
             const lastMs = info.lastUpdate || 0;
             if (now - lastMs < info.interval * 60 * 1000) continue;
-            const filePath = path.join(PROFILES_DIR, fileName);
-            if (!fs.existsSync(filePath)) continue;
             try {
+                if (info.aggregate) {
+                    // The free aggregate has no single URL: re-aggregate.
+                    // refreshFreeAggregate() updates meta.lastUpdate itself.
+                    const result = await refreshFreeAggregate();
+                    if (result.ok !== false) console.log(`[auto-update] ${fileName} updated`);
+                    else console.log(`[auto-update] ${fileName} failed: ${result.error}`);
+                    continue;
+                }
+                if (!info.url) continue;
+                const filePath = path.join(PROFILES_DIR, fileName);
+                if (!fs.existsSync(filePath)) continue;
                 const result = await fetchAndConvertSub(info.url);
                 if (result.error) continue;
                 await writeFileAtomic(filePath, result.yamlContent);

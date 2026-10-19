@@ -12,6 +12,7 @@ const { writeFileAtomic } = require('../lib/atomic');
 const { fetchAndConvertSub } = require('../lib/subscription');
 const { hasSubscriptionInfo } = require('../lib/subscription-info');
 const { defaultConfig, readConfig, writeConfig } = require('../lib/config');
+const { loadIntranet, applyIntranetToConfig } = require('../lib/intranet');
 const core = require('../lib/core');
 const { connectLogStream, disconnectLogStream } = require('../lib/mihomo');
 
@@ -49,6 +50,7 @@ router.get('/profiles', async (req, res) => {
                     size: Buffer.byteLength(content),
                     modified: stat.mtime,
                     url: info.url || null,
+                    aggregate: info.aggregate || false,
                     interval: info.interval || 0,
                     lastUpdate: info.lastUpdate || null,
                     upload: info.upload || 0,
@@ -161,6 +163,11 @@ router.post('/profiles/:name/apply', async (req, res) => {
         base.proxies = profile.proxies || [];
         base['proxy-groups'] = profile['proxy-groups'] || [];
         base.rules = profile.rules || [];
+
+        // Corporate hosts can resolve to private IPs; without these rules the
+        // profile's own MATCH sends intranet traffic to a remote node, which
+        // cannot reach it. See server/lib/intranet.js.
+        applyIntranetToConfig(base, await loadIntranet());
 
         await writeConfig(base);
         await updateMeta((meta) => {

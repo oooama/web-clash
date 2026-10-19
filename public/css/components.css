@@ -84,6 +84,13 @@
         .rules-ctrl{display:flex;gap:10px;margin-bottom:18px;align-items:center;flex-wrap:wrap;position:relative}
         .rules-ctrl .inp{flex:1;min-width:200px}
         .rules-ctrl select.inp{position:relative}
+        .rules-search{display:flex;align-items:center;gap:10px;margin:-6px 0 14px;padding:0 2px}
+        .rules-search>.material-icons-round{font-size:17px;color:var(--t3);flex-shrink:0}
+        .rules-search .inp{flex:1;min-width:160px;padding:8px 14px;font-size:13px}
+        .rules-search .rs-count{font-size:12px;color:var(--t3);flex-shrink:0;font-variant-numeric:tabular-nums}
+        .rules-search .rs-clear{width:26px;height:26px;border:none;background:transparent;border-radius:8px;cursor:pointer;color:var(--t3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s ease}
+        .rules-search .rs-clear:hover{background:rgba(0,0,0,.06);color:var(--t)}
+        .rules-search .rs-clear .material-icons-round{font-size:15px}
         .rule-list{display:flex;flex-direction:column;gap:5px;max-height:calc(100vh - 290px);overflow-y:auto}
         .rule-list::-webkit-scrollbar{width:4px}
         .rule-list::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:10px}
@@ -232,4 +239,4 @@
         .empty{text-align:center;padding:70px 20px;color:var(--t3)}
         .empty .material-icons-round{font-size:52px;margin-bottom:16px;opacity:.2}
         .empty .et{font-size:17px;font-weight:600;margin-bottom:6px;color:var(--t2)}
-        .empty .ed{font-size:13px}
+        .empty .ed{font-size:13px}

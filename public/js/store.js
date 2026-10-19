@@ -11,6 +11,7 @@ export const state = {
     allInfo: {},
     logs: [],
     rules: [],
+    ruleQuery: '',
     activePf: localStorage.getItem('activePf') || '',
     editFileName: '',
     lastCnHtml: null,

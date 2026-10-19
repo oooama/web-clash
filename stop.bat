@@ -9,8 +9,8 @@ if exist "data\core.pid" set /p COREPID=<data\core.pid
 if not "%COREPID%"=="" goto :killpid
 
 rem No PID file: fall back to whatever listens on the core ports
-rem (7890 mixed / 9090 controller), still not every mihomo-run.exe.
-for %%p in (7890 9090) do (
+rem (7892 mixed / 9090 controller), still not every mihomo-run.exe.
+for %%p in (7892 9090) do (
     for /f "tokens=5" %%a in ('netstat -ano ^| findstr /C:":%%p " ^| findstr LISTENING') do (
         taskkill /F /PID %%a >nul 2>&1
     )

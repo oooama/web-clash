@@ -12,6 +12,8 @@ const YAML = require('yaml');
 const { CONFIG_PATH, MIXED_PORT, CLASH_API_PORT } = require('../constants');
 const { writeFileAtomic } = require('./atomic');
 
+const MODES = ['rule', 'global', 'direct'];
+
 const DEFAULT_RULES = [
     'DOMAIN-SUFFIX,local,DIRECT',
     'IP-CIDR,127.0.0.0/8,DIRECT,no-resolve',
@@ -89,4 +91,20 @@ async function writeConfig(config) {
     return config;
 }
 
-module.exports = { defaultConfig, DEFAULT_RULES, readConfig, writeConfig };
+/** Normalise an outbound mode value; null when it is not one of the three. */
+function normalizeMode(value) {
+    const mode = String(value == null ? '' : value).trim().toLowerCase();
+    return MODES.includes(mode) ? mode : null;
+}
+
+/**
+ * Copy of `config` with a validated mode applied, or null for an unknown mode.
+ * Returning a copy keeps the caller's object (often a cached read) untouched.
+ */
+function withMode(config, value) {
+    const mode = normalizeMode(value);
+    if (!mode) return null;
+    return { ...config, mode };
+}
+
+module.exports = { defaultConfig, DEFAULT_RULES, MODES, normalizeMode, withMode, readConfig, writeConfig };

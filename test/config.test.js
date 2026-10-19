@@ -4,7 +4,7 @@ const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { defaultConfig, DEFAULT_RULES } = require('../server/lib/config');
+const { defaultConfig, DEFAULT_RULES, MODES, normalizeMode, withMode } = require('../server/lib/config');
 const { writeFileAtomic, writeFileQueued, serialized } = require('../server/lib/atomic');
 const { applySubscriptionInfo } = require('../server/lib/meta');
 const { MIXED_PORT, CLASH_API_PORT } = require('../server/constants');
@@ -46,6 +46,28 @@ test('defaultConfig returns a fresh object each call', () => {
     assert.deepStrictEqual(b['proxy-groups'][0].proxies, ['DIRECT']);
     assert.deepStrictEqual(b.dns.nameserver, ['223.5.5.5', '1.12.12.12']);
     assert.deepStrictEqual(b.sniffer.sniff.TLS.ports, [443, 8443]);
+});
+test('the three outbound modes are accepted and normalised', () => {
+    assert.deepStrictEqual(MODES, ['rule', 'global', 'direct']);
+    assert.strictEqual(normalizeMode('rule'), 'rule');
+    assert.strictEqual(normalizeMode('GLOBAL'), 'global');
+    assert.strictEqual(normalizeMode(' direct '), 'direct');
+    assert.strictEqual(normalizeMode('proxy'), null);
+    assert.strictEqual(normalizeMode(''), null);
+    assert.strictEqual(normalizeMode(undefined), null);
+    assert.strictEqual(normalizeMode(null), null);
+});
+
+test('withMode applies a valid mode without mutating the caller', () => {
+    const base = { mode: 'rule', 'mixed-port': MIXED_PORT };
+    const global = withMode(base, 'global');
+    assert.strictEqual(global.mode, 'global');
+    // Everything else is carried over, and the source object is untouched.
+    assert.strictEqual(global['mixed-port'], MIXED_PORT);
+    assert.strictEqual(base.mode, 'rule');
+    // An unknown mode must be rejected rather than written to the file.
+    assert.strictEqual(withMode(base, 'proxy'), null);
+    assert.strictEqual(withMode(base, ''), null);
 });
 
 function tmpDir() {

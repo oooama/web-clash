@@ -10,7 +10,10 @@ const PROFILES_DIR = path.join(ROOT_DIR, 'profiles');
 
 const PORT = 7891;
 const CLASH_API_PORT = 9090;
-const MIXED_PORT = 7890;
+// 7892 rather than the conventional 7890: a previously killed mihomo left a
+// zombie UDP socket bound to 7890 on this machine, and the mixed port needs
+// both TCP and UDP. Reclaiming 7890 requires a reboot.
+const MIXED_PORT = 7892;
 
 const MIHOMO_RUN = path.join(BIN_DIR, 'mihomo-run.exe');
 const CONFIG_PATH = path.join(DATA_DIR, 'config.yaml');

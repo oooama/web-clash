@@ -16,6 +16,7 @@ const systemRouter = require('./routes/system');
 const logsRouter = require('./routes/logs');
 const configRouter = require('./routes/config');
 const profilesRouter = require('./routes/profiles');
+const freeSourcesRouter = require('./routes/free-sources');
 
 /**
  * Forward anything under /api that no local route claimed to the mihomo
@@ -108,6 +109,7 @@ function createApp({ onReject, onError } = {}) {
     app.use('/api', logsRouter);
     app.use('/api', configRouter);
     app.use('/api', profilesRouter);
+    app.use('/api', freeSourcesRouter);
     app.use('/api', proxyToCore);
 
     // History-API fallback: any other GET renders the shell so that a deep
