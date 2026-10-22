@@ -110,9 +110,38 @@ function extractProxies(text) {
 }
 
 /**
+ * A stable identity for one node, covering every field that makes a distinct
+ * tunnel rather than a distinct address. A vless node on the same host:port
+ * as another but with a different uuid, transport or SNI is a *different node*
+ * and must survive de-duplication; the previous type|server|port key dropped
+ * these and, on a live free source, discarded 142/351 real nodes (40%).
+ */
+function nodeIdentity(p) {
+    return JSON.stringify([
+        p.type,
+        p.server,
+        p.port,
+        p.uuid,
+        p.password,
+        p.cipher,
+        p.method,
+        p.plugin,
+        p.network,
+        p.path,
+        p.sni,
+        p.alpn,
+        p.obfs,
+        p['obfs-password'],
+        p['ws-opts'] || null,
+        p['grpc-opts'] || null,
+        p['reality-opts'] || null
+    ]);
+}
+
+/**
  * Merge per-source proxy lists: drop entries without server/port, collapse
- * identical endpoints across sources, and keep names unique (mihomo requires
- * unique proxy names) by suffixing collisions.
+ * identical nodes (full identity, not just endpoint) across sources, and keep
+ * names unique (mihomo requires unique proxy names) by suffixing collisions.
  */
 function mergeProxies(groups, perSourceCap = MAX_PER_SOURCE) {
     const seenAddr = new Set();
@@ -124,7 +153,7 @@ function mergeProxies(groups, perSourceCap = MAX_PER_SOURCE) {
         for (const p of group) {
             if (taken >= perSourceCap) break;
             if (!p || !p.name || !p.server || !p.port) continue;
-            const key = `${p.type}|${p.server}|${p.port}`;
+            const key = nodeIdentity(p);
             if (seenAddr.has(key)) continue;
             seenAddr.add(key);
             let name = String(p.name);
@@ -205,7 +234,13 @@ async function probeAll(proxies, { concurrency = TCP_CONCURRENCY, timeoutMs = TC
     return alive;
 }
 
-/** Grab an ephemeral local port for the throwaway core. */
+/**
+ * Grab an ephemeral local port for the throwaway core. The listener is
+ * closed before the core binds it, which leaves a small TOCTOU window; that
+ * is acceptable for a throwaway probe (a failure to bind just aborts the
+ * probe run, not the user's service) and is cheaper than holding the socket
+ * open across the spawn.
+ */
 function freePort() {
     return new Promise((resolve, reject) => {
         const srv = net.createServer();
@@ -448,6 +483,7 @@ module.exports = {
     fetchSourceText,
     extractProxies,
     mergeProxies,
+    nodeIdentity,
     tcpProbe,
     probeAll,
     wrapAggregate,

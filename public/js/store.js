@@ -18,7 +18,8 @@ export const state = {
     wsRetry: 1000,
     wsTimer: null,
     status: null,
-    systemProxy: null
+    systemProxy: null,
+    freePollTimer: null
 };
 
 const listeners = new Map();

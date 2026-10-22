@@ -47,6 +47,9 @@ export async function loadPf(){
 export async function saveProf(){const n=document.getElementById('pName').value.trim(),u=document.getElementById('pUrl').value.trim(),c=document.getElementById('pYaml').value.trim();if(!n&&!u){toast(T('t.nameReq'));return;}if(!u&&!c){toast(T('t.contentReq'));return;}const r=await api('/profiles',{method:'POST',body:{name:n,content:c,url:u||undefined}});if(!r||!r.success){toast(T('t.addFail')+': '+(r?.error||T('t.noServer')));return;}closeDlg();document.getElementById('pName').value='';document.getElementById('pUrl').value='';document.getElementById('pYaml').value='';loadPf();toast(T('t.saved'));}
 
 export async function refreshFree(){
+    // A previous poll left running would keep hitting the API after the user
+    // navigates away; clear it before starting a new one.
+    if (state.freePollTimer) { clearInterval(state.freePollTimer); state.freePollTimer = null; }
     const r=await api('/free-sources/refresh',{method:'POST'});
     if(!r)return toast(T('t.noServer'));
     if(r.busy)return toast(T('t.freeBusy'));
@@ -56,13 +59,15 @@ export async function refreshFree(){
     const iv=setInterval(async()=>{
         const s=await api('/free-sources');
         if(!s)return;
-        if(s.running){if(Date.now()-startedAt>180000){clearInterval(iv);toast(T('t.freeFail'));}return;}
+        if(s.running){if(Date.now()-startedAt>180000){clearInterval(iv);state.freePollTimer=null;toast(T('t.freeFail'));}}
         clearInterval(iv);
+        state.freePollTimer=null;
         loadPf();
         const lr=s.lastRun;
         if(lr&&lr.ok)toast(`${T('t.freeDone')}: ${lr.alive||0}/${lr.total||0} ${T('pf.nodesLower')}`);
         else toast(T('t.freeFail')+': '+((lr&&lr.error)||''));
     },3000);
+    state.freePollTimer=iv;
 }
 
 export async function applyPf(n){const r=await api('/profiles/'+encodeURIComponent(n)+'/apply',{method:'POST'});if(!r)return toast(T('t.noServer'));if(!r.success)return toast(T('t.applyFail')+': '+(r.error||T('t.unknown')));state.activePf=n;localStorage.setItem('activePf',n);loadPf();refreshStatus();toast(T('t.updating'));setTimeout(()=>{navigate('/proxies');let t=0;const iv=setInterval(()=>{loadPx();t++;if(t>20||document.querySelector('.nc')){clearInterval(iv);toast(T('t.applied'));}},1000);},1500);}
@@ -104,5 +109,11 @@ export function mount(root) {
 
     loadPf();
 
-    return () => disposers.forEach((off) => off && off());
+    return () => {
+        // Stop the free-aggregate polling interval so it does not keep
+        // hitting the API (and calling loadPf on a detached page) after
+        // the user navigates away.
+        if (state.freePollTimer) { clearInterval(state.freePollTimer); state.freePollTimer = null; }
+        disposers.forEach((off) => off && off());
+    };
 }

@@ -52,6 +52,34 @@ test('extractProxies handles Clash YAML documents', () => {
     assert.strictEqual(r[0].name, 'NodeB');
 });
 
+test('same endpoint + different credentials = two distinct nodes', () => {
+    // The old type|server|port key collapsed these; on a live free source that
+    // dropped 142/351 real nodes. Identical credentials on one endpoint are
+    // still merged, but anything that changes the tunnel must survive.
+    const merged = mergeProxies([[
+        { name: 'A', type: 'vless', server: 'cdn.example.com', port: 443, uuid: 'uuid-1' },
+        { name: 'B', type: 'vless', server: 'cdn.example.com', port: 443, uuid: 'uuid-2' }
+    ]]);
+    assert.strictEqual(merged.length, 2, 'different uuids must survive');
+});
+
+test('same endpoint + different transport = two distinct nodes', () => {
+    const merged = mergeProxies([[
+        { name: 'W', type: 'vmess', server: 'x.com', port: 443, network: 'ws', path: '/a' },
+        { name: 'G', type: 'vmess', server: 'x.com', port: 443, network: 'grpc' }
+    ]]);
+    assert.strictEqual(merged.length, 2, 'different transports must survive');
+});
+
+test('same endpoint + identical credentials across sources = still merged', () => {
+    // A node re-listed by a second aggregator is still the same node.
+    const merged = mergeProxies([
+        [{ name: 'N', type: 'ss', server: 's', port: 443, cipher: 'aes-128-gcm', password: 'p' }],
+        [{ name: 'N-copy', type: 'ss', server: 's', port: 443, cipher: 'aes-128-gcm', password: 'p' }]
+    ]);
+    assert.strictEqual(merged.length, 1, 'genuinely identical nodes merge');
+});
+
 test('tcpProbe resolves true for a listening port and false otherwise', async () => {
     const srv = net.createServer(() => {});
     await new Promise((resolve) => srv.listen(0, '127.0.0.1', resolve));
